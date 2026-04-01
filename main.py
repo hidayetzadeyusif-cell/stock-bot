@@ -1,12 +1,13 @@
-import requests, time, random, os
+import requests, time, random, os, threading
+from flask import Flask
 from dotenv import load_dotenv
 
 load_dotenv()
 ALL_CIKS = tuple(os.getenv("CIK", "xxxxxxxxxx").split(","))
 BOT_NAME = os.getenv("BOT_NAME", "MySecBot")
 EMAIL = os.getenv("EMAIL", "your@email.com")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "None")
-CHAT_ID = os.getenv("CHAT_ID", "None")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 BASE_DELAY = max(float(os.getenv("BASE_DELAY", 3)), 1.0)
 
 HEADERS = {
@@ -87,6 +88,16 @@ def handle_output(output, chat_id=None, bot_token=None):
         print(f"Failed to send Telegram message:\n{e}\nDefaulting to print.\n")
         print(output)
 
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is alive"
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+
 def main():
     cik_index = 0
     delay = BASE_DELAY
@@ -122,4 +133,5 @@ def main():
         time.sleep(delay + random.uniform(0, 0.5))
 
 if __name__ == "__main__":
+    threading.Thread(target=run_web).start()
     main()
