@@ -94,21 +94,19 @@ app = Flask(__name__)
 def home():
     return "Bot is alive"
 
-def run_web():
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-
 def main():
     cik_index = 0
     delay = BASE_DELAY
     last_date = get_date()
 
+    print("MAIN LOOP STARTED", flush=True)
     while True:
         try:
             URL = f"https://data.sec.gov/submissions/CIK{ALL_CIKS[cik_index]}.json"
 
+            print(f"Fetching URL: {URL}", flush=True)
             data = fetch_data(URL)
-            print(f"Fetched OK: CIK = {ALL_CIKS[cik_index]}")
+            print(f"Fetched OK: CIK = {ALL_CIKS[cik_index]}", flush=True)
 
             delay = BASE_DELAY
 
@@ -128,10 +126,17 @@ def main():
         
         except (requests.exceptions.RequestException, ValueError) as e:
             delay = min(delay * 2, 60)
-            print(f"Error: {e} -> backing off to {delay}s")
+            print(f"Error: {e} -> backing off to {delay}s", flush=True)
 
         time.sleep(delay + random.uniform(0, 0.5))
 
 if __name__ == "__main__":
-    threading.Thread(target=run_web).start()
-    main()
+    port = int(os.environ.get("PORT", 10000))
+
+    threading.Thread(target=main, daemon=True).start()
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        threaded=True
+    )
