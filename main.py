@@ -104,6 +104,7 @@ def main():
         try:
             URL = f"https://data.sec.gov/submissions/CIK{ALL_CIKS[cik_index]}.json"
 
+            print(f"Currently searching CIK index: {cik_index}; corresponding to: {ALL_CIKS[cik_index]}")
             print(f"Fetching URL: {URL}", flush=True)
             data = fetch_data(URL)
             print(f"Fetched OK: CIK = {ALL_CIKS[cik_index]}", flush=True)
