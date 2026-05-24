@@ -129,7 +129,7 @@ def main():
                     bot_token=TELEGRAM_BOT_TOKEN
                 )
 
-            time.sleep(0.1 + random.uniform(0, 0.1))
+            time.sleep(0.5 + random.uniform(0, 0.5))
 
         except Exception as e:
             print(f"Error processing {cik}: {e}")
