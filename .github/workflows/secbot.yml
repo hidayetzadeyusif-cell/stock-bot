@@ -6,10 +6,8 @@ concurrency:
 
 on:
   push:
-  
   schedule:
-    - cron: "*/10 * * * *"
-
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
