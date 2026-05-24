@@ -51,3 +51,6 @@ jobs:
           git diff --cached --quiet || git commit -m "update seen docs"
 
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: Print trigger
+        run: echo "${{ github.event_name }}"
