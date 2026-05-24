@@ -1,38 +1,50 @@
-import requests, time, random, os, threading
-from flask import Flask
+import requests, time, random, os, json
 from dotenv import load_dotenv
 
 load_dotenv()
+
 ALL_CIKS = tuple(os.getenv("CIK", "xxxxxxxxxx").split(","))
 BOT_NAME = os.getenv("BOT_NAME", "MySecBot")
 EMAIL = os.getenv("EMAIL", "your@email.com")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
-BASE_DELAY = max(float(os.getenv("BASE_DELAY", 3)), 1.0)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "None")
+CHAT_ID = os.getenv("CHAT_ID", "None")
 
 HEADERS = {
     "User-Agent": f"{BOT_NAME} {EMAIL}"
 }
 
-seen_documents = set()
+SEEN_FILE = "seen.json"
+
+
+def load_seen():
+    try:
+        with open(SEEN_FILE, "r") as f:
+            return set(json.load(f))
+    except:
+        return set()
+
+
+def save_seen(seen):
+    with open(SEEN_FILE, "w") as f:
+        json.dump(list(seen), f)
+
+
+seen_documents = load_seen()
+
 
 def get_date():
-    #return "2026-03-18"
     gm_time = time.gmtime()
     return f"{gm_time.tm_year:04d}-{gm_time.tm_mon:02d}-{gm_time.tm_mday:02d}"
 
 
-def clear_seen():
-    seen_documents.clear()
-
 def send_telegram_message(msg, to, token):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    
+
     data = {
         "chat_id": to,
         "text": msg
     }
-    
+
     response = requests.post(url, data=data)
     result = response.json()
 
@@ -40,6 +52,7 @@ def send_telegram_message(msg, to, token):
         raise Exception(f"Telegram error: {result}")
 
     return result
+
 
 def fetch_data(url):
     response = requests.get(url, headers=HEADERS, timeout=5)
@@ -49,6 +62,7 @@ def fetch_data(url):
         raise ValueError("Response is not JSON")
 
     return response.json()
+
 
 def process_data(data, target_date, cik):
     filings = data["filings"]["recent"]
@@ -80,64 +94,48 @@ def process_data(data, target_date, cik):
 
     return results
 
+
 def handle_output(output, chat_id=None, bot_token=None):
     try:
         send_telegram_message(output, chat_id, bot_token)
         print("Telegram message OK")
     except Exception as e:
-        print(f"Failed to send Telegram message:\n{e}\nDefaulting to print.\n")
+        print(f"Failed to send Telegram message:\n{e}\n")
         print(output)
 
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Bot is alive"
 
 def main():
-    cik_index = 0
-    delay = BASE_DELAY
-    last_date = get_date()
+    today = get_date()
 
-    print("MAIN LOOP STARTED", flush=True)
-    while True:
+    for cik in ALL_CIKS:
         try:
-            URL = f"https://data.sec.gov/submissions/CIK{ALL_CIKS[cik_index]}.json"
+            url = f"https://data.sec.gov/submissions/CIK{cik}.json"
 
-            print(f"Currently searching CIK index: {cik_index}; corresponding to: {ALL_CIKS[cik_index]}")
-            print(f"Fetching URL: {URL}", flush=True)
-            data = fetch_data(URL)
-            print(f"Fetched OK: CIK = {ALL_CIKS[cik_index]}", flush=True)
+            data = fetch_data(url)
 
-            delay = BASE_DELAY
+            print(f"Fetched OK: CIK = {cik}")
 
-            today = get_date()
-            document_urls = process_data(data, today, ALL_CIKS[cik_index])
+            document_urls = process_data(data, today, cik)
 
-            for url in document_urls:
-                output = f"Document found for: {data['name']}, CIK number: {ALL_CIKS[cik_index]}. Click here to see document:\n{url}"
-                handle_output(output, chat_id=CHAT_ID, bot_token=TELEGRAM_BOT_TOKEN)
-            
-            if today != last_date:
-                clear_seen()
-            last_date = today
+            for doc_url in document_urls:
+                output = (
+                    f"Document found for: {data['name']}, "
+                    f"CIK number: {cik}.\n{doc_url}"
+                )
 
-            cik_index += 1
-            cik_index %= len(ALL_CIKS)
-        
-        except (requests.exceptions.RequestException, ValueError) as e:
-            delay = min(delay * 2, 60)
-            print(f"Error: {e} -> backing off to {delay}s", flush=True)
+                handle_output(
+                    output,
+                    chat_id=CHAT_ID,
+                    bot_token=TELEGRAM_BOT_TOKEN
+                )
 
-        time.sleep(delay + random.uniform(0, 0.5))
+            time.sleep(0.5 + random.uniform(0, 0.5))
+
+        except Exception as e:
+            print(f"Error processing {cik}: {e}")
+
+    save_seen(seen_documents)
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-
-    threading.Thread(target=main, daemon=True).start()
-
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        threaded=True
-    )
+    main()
