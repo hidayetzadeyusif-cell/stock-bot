@@ -134,6 +134,8 @@ def main():
         except Exception as e:
             print(f"Error processing {cik}: {e}")
 
+    print("Finished cycle OK")
+
     save_seen(seen_documents)
 
 
