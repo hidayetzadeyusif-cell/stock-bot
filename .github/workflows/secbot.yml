@@ -1,59 +1,15 @@
-name: SEC Bot
-
-concurrency:
-  group: sec-bot
-  cancel-in-progress: true
+name: Schedule Test
 
 on:
-  push:
-    paths-ignore:
-      - seen.json
-  
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "17,47 * * * *"
   workflow_dispatch:
 
 jobs:
-  run-bot:
+  test:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run bot
-        env:
-          CIK: ${{ secrets.CIK }}
-          BOT_NAME: ${{ secrets.BOT_NAME }}
-          EMAIL: ${{ secrets.EMAIL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python main.py
-
-      - name: Commit seen.json
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-
-          git add seen.json
-
-          git diff --cached --quiet || git commit -m "update seen docs"
-
-          git push origin HEAD:${{ github.ref_name }}
-
-      - name: Print trigger
-        run: echo "${{ github.event_name }}"
+      - run: |
+          echo "EVENT=${{ github.event_name }}"
+          date -u
