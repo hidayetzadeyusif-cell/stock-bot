@@ -1,4 +1,5 @@
-import requests, time, random, os, json
+import requests, random, os, json, time
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,6 +9,7 @@ BOT_NAME = os.getenv("BOT_NAME", "MySecBot")
 EMAIL = os.getenv("EMAIL", "your@email.com")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "None")
 CHAT_ID = os.getenv("CHAT_ID", "None")
+LOOKBACK_DAYS = 3
 
 HEADERS = {
     "User-Agent": f"{BOT_NAME} {EMAIL}"
@@ -30,11 +32,6 @@ def save_seen(seen):
 
 
 seen_documents = load_seen()
-
-
-def get_date():
-    gm_time = time.gmtime()
-    return f"{gm_time.tm_year:04d}-{gm_time.tm_mon:02d}-{gm_time.tm_mday:02d}"
 
 
 def send_telegram_message(msg, to, token):
@@ -64,20 +61,26 @@ def fetch_data(url):
     return response.json()
 
 
-def process_data(data, target_date, cik):
+def process_data(data, cik):
     filings = data["filings"]["recent"]
     results = []
+
+    cutoff_date = (
+        datetime.now(timezone.utc) - timedelta(days=LOOKBACK_DAYS)
+    ).date()
 
     for filing_date, accession, primary_doc in zip(
         filings["filingDate"],
         filings["accessionNumber"],
         filings["primaryDocument"]
     ):
-        if filing_date < target_date:
-            break
+        filing_date_obj = datetime.strptime(
+            filing_date,
+            "%Y-%m-%d"
+        ).date()
 
-        if filing_date > target_date:
-            continue
+        if filing_date_obj < cutoff_date:
+            break
 
         if accession in seen_documents:
             continue
@@ -105,8 +108,6 @@ def handle_output(output, chat_id=None, bot_token=None):
 
 
 def main():
-    today = get_date()
-
     for cik in ALL_CIKS:
         try:
             url = f"https://data.sec.gov/submissions/CIK{cik}.json"
@@ -115,7 +116,7 @@ def main():
 
             print(f"Fetched OK: CIK = {cik}")
 
-            document_urls = process_data(data, today, cik)
+            document_urls = process_data(data, cik)
 
             for doc_url in document_urls:
                 output = (
