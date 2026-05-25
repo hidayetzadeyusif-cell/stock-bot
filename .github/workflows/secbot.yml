@@ -2,10 +2,13 @@ name: SEC Bot
 
 concurrency:
   group: sec-bot
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 on:
   push:
+    paths-ignore:
+      - seen.json
+  
   schedule:
     - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
