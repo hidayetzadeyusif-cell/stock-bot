@@ -16,7 +16,7 @@ HEADERS = {
 }
 
 SEEN_FILE = "seen.json"
-
+new_document_exists = False
 
 def load_seen():
     try:
@@ -62,6 +62,8 @@ def fetch_data(url):
 
 
 def process_data(data, cik):
+    global new_document_exists
+
     filings = data["filings"]["recent"]
     results = []
 
@@ -86,6 +88,7 @@ def process_data(data, cik):
             continue
 
         seen_documents.add(accession)
+        new_document_exists = True
 
         acc_number = accession.replace("-", "")
         document_url = (
@@ -137,7 +140,8 @@ def main():
 
     print("Finished cycle OK")
 
-    save_seen(seen_documents)
+    if new_document_exists:
+        save_seen(seen_documents)
 
 
 if __name__ == "__main__":
