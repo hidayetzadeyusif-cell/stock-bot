@@ -52,3 +52,9 @@ def validate_config(config):
 def save_config(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
+
+    print("Saved to:", os.path.abspath(CONFIG_FILE))
+
+    with open(CONFIG_FILE) as f:
+        print("Contents after save:")
+        print(f.read())
