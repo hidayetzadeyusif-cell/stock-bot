@@ -78,6 +78,7 @@ class TelegramBot:
                 case "/help":
                     self.send_telegram_message(
                         "Available commands:\n\n"
+                        "/help\n"
                         "/list\n"
                         "/add <CIK>\n"
                         "/remove <CIK>"
