@@ -89,6 +89,7 @@ def main():
     config_changed = telegram_bot.process_commands(config)
     if config_changed:
         save_config(config)
+        print("Updated config")
 
     for cik in config["ciks"]:
         try:
