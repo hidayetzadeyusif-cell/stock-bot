@@ -4,7 +4,68 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ALL_CIKS = tuple(os.getenv("CIK", "xxxxxxxxxx").split(","))
+CONFIG_FILE = "config.json"
+
+DEFAULT_CONFIG = {
+    "ciks": []
+}
+
+SEEN_FILE = "seen.json"
+new_document_exists = False
+
+def load_config():
+    config = DEFAULT_CONFIG.copy()
+
+    try:
+        with CONFIG_FILE.open() as f:
+            data = json.load(f)
+
+        if not isinstance(data, dict):
+            raise ValueError("Config must be a JSON object.")
+
+        config.update(data)
+
+    except FileNotFoundError:
+        print("config.json not found, using defaults.")
+
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON: {e}")
+        print("Using defaults.")
+
+    except Exception as e:
+        print(f"Error loading config: {e}")
+        print("Using defaults.")
+
+    return config
+
+def validate_config(config):
+    if not isinstance(config["ciks"], list):
+        raise ValueError("'ciks' must be a list.")
+
+    if not all(isinstance(cik, str) for cik in config["ciks"]):
+        raise ValueError("All CIKs must be strings.")
+    
+    if not all(len(cik) == 10 for cik in config["ciks"]):
+        raise ValueError("All CIKs must be 10 digits long.")
+
+def load_seen():
+    try:
+        with open(SEEN_FILE, "r") as f:
+            return set(json.load(f))
+    except:
+        return set()
+
+def save_seen(seen):
+    with open(SEEN_FILE, "w") as f:
+        json.dump(list(seen), f)
+
+
+config = load_config()
+validate_config(config)
+
+seen_documents = load_seen()
+
+ALL_CIKS = tuple(config["ciks"])
 BOT_NAME = os.getenv("BOT_NAME", "MySecBot")
 EMAIL = os.getenv("EMAIL", "your@email.com")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "None")
@@ -14,24 +75,6 @@ LOOKBACK_DAYS = 3
 HEADERS = {
     "User-Agent": f"{BOT_NAME} {EMAIL}"
 }
-
-SEEN_FILE = "seen.json"
-new_document_exists = False
-
-def load_seen():
-    try:
-        with open(SEEN_FILE, "r") as f:
-            return set(json.load(f))
-    except:
-        return set()
-
-
-def save_seen(seen):
-    with open(SEEN_FILE, "w") as f:
-        json.dump(list(seen), f)
-
-
-seen_documents = load_seen()
 
 
 def send_telegram_message(msg, to, token):
