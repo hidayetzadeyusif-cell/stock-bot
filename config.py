@@ -1,4 +1,4 @@
-import json
+import json, os
 
 CONFIG_FILE = "config.json"
 
