@@ -76,9 +76,9 @@ class TelegramBot:
 
             match command:
                 case "/help":
+                    config_changed = True
                     self.send_telegram_message(
                         "Available commands:\n\n"
-                        "/help\n"
                         "/list\n"
                         "/add <CIK>\n"
                         "/remove <CIK>"
@@ -93,6 +93,7 @@ class TelegramBot:
                     else:
                         msg = "No CIKs are currently being monitored."
 
+                    config_changed = True
                     self.send_telegram_message(msg)
 
                 case "/add":
