@@ -43,15 +43,15 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python main.py
 
-      - name: Commit seen.json
+      - name: Commit state files
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-
-          git add seen.json
-
-          git diff --cached --quiet || git commit -m "update seen docs"
-
+      
+          git add seen.json config.json
+      
+          git diff --cached --quiet || git commit -m "Update bot state"
+      
           git push origin HEAD:${{ github.ref_name }}
 
       - name: Print trigger
