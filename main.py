@@ -88,9 +88,7 @@ def process_data(data, cik):
 def main():
     config_changed = telegram_bot.process_commands(config)
     if config_changed:
-        print("Old config:", config)
         save_config(config)
-        print("New config:", config)
         print("Updated config")
 
     for cik in config["ciks"]:
