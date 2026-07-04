@@ -17,7 +17,7 @@ def load_config():
     config = DEFAULT_CONFIG.copy()
 
     try:
-        with CONFIG_FILE.open() as f:
+        with open(CONFIG_FILE, "r") as f:
             data = json.load(f)
 
         if not isinstance(data, dict):
