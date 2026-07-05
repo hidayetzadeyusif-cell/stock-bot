@@ -69,6 +69,8 @@ class TelegramBot:
             if not text.startswith("/"):
                 continue
 
+            print("Command processed:", text)
+            
             parts = text.split()
 
             command = parts[0].lower()
